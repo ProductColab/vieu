@@ -1,4 +1,5 @@
 import * as z from "zod";
+import React from "react";
 import {
   type BaseMetadata,
   type BaseComponentProps,
@@ -19,6 +20,8 @@ export type FormSection = {
   title: string;
   /** Optional description text */
   description?: string;
+  /** Optional icon for the section (SVG element) */
+  icon?: React.ReactElement;
   /** Order for section display (lower numbers first) */
   order: number;
   /** Whether the section can be collapsed */

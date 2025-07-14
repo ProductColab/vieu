@@ -2,6 +2,7 @@ import * as z from "zod";
 import { registerMetadataForSchemas } from "../schema/register-views";
 import { userServerActions } from "../mock-server-actions";
 import type { FormSections } from "../views/form/form.registry";
+import { User, Mail, Settings, FileText } from "lucide-react";
 
 // Regular Zod schema - clean and simple
 const userSchema = z.object({
@@ -32,22 +33,30 @@ const userFormSections: FormSections = {
   "basic-info": {
     title: "Basic Information",
     description: "Core user details",
+    icon: <User />,
     order: 1,
+    collapsible: false,
   },
   "contact": {
     title: "Contact Information",
     description: "How to reach the user",
+    icon: <Mail />,
     order: 2,
+    collapsible: true,
   },
   "account": {
     title: "Account Details",
     description: "User permissions and status",
+    icon: <Settings />,
     order: 3,
+    collapsible: true,
   },
   "additional": {
     title: "Additional Information",
     description: "Extra details and notes",
+    icon: <FileText />,
     order: 4,
+    collapsible: true,
   },
 };
 
