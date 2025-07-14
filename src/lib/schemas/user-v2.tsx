@@ -1,6 +1,13 @@
 import * as z from "zod";
 import { registerMetadataForSchemas } from "../schema/register-views";
-import { userServerActions } from "../mock-server-actions";
+import {
+  registerAsyncOptions,
+  createServerActionOptionsFetcher,
+} from "../schema/options-query";
+import {
+  getDepartmentOptionsAction,
+  userServerActions,
+} from "../mock-server-actions";
 import type { FormSections } from "../views/form/form.registry";
 import { User, Mail, Settings, FileText } from "lucide-react";
 
@@ -18,6 +25,7 @@ const userSchema = z.object({
   phoneNumber: z.string().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  departmentId: z.string().uuid().optional(),
 });
 
 const formSchema = userSchema.omit({
@@ -28,6 +36,42 @@ const formSchema = userSchema.omit({
 
 type UserValues = z.infer<typeof userSchema>;
 
+// Register async options for departmentId field
+const departmentIdField = userSchema.shape.departmentId;
+const formDepartmentIdField = formSchema.shape.departmentId;
+
+// Create fetcher for departments
+const departmentsFetcher = createServerActionOptionsFetcher(
+  getDepartmentOptionsAction,
+  // Transform function to convert department objects to ViewOptions
+  (departments: any[]) =>
+    departments.map((dept) => ({
+      value: dept.id,
+      label: dept.name,
+    }))
+);
+
+// Register async options on both schemas
+registerAsyncOptions(departmentIdField, {
+  queryKey: ["departments"],
+  fetcher: departmentsFetcher,
+  cacheConfig: {
+    staleTime: 10 * 60 * 1000, // 10 minutes (departments don't change often)
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
+  },
+});
+
+registerAsyncOptions(formDepartmentIdField, {
+  queryKey: ["departments"],
+  fetcher: departmentsFetcher,
+  cacheConfig: {
+    staleTime: 10 * 60 * 1000, // 10 minutes (departments don't change often)
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
+  },
+});
+
 // Define form sections
 const userFormSections: FormSections = {
   "basic-info": {
@@ -37,21 +81,21 @@ const userFormSections: FormSections = {
     order: 1,
     collapsible: false,
   },
-  "contact": {
+  contact: {
     title: "Contact Information",
     description: "How to reach the user",
     icon: <Mail />,
     order: 2,
     collapsible: true,
   },
-  "account": {
+  account: {
     title: "Account Details",
     description: "User permissions and status",
     icon: <Settings />,
     order: 3,
     collapsible: true,
   },
-  "additional": {
+  additional: {
     title: "Additional Information",
     description: "Extra details and notes",
     icon: <FileText />,
@@ -96,7 +140,10 @@ const userMetadata = {
 
   status: {
     input: { inputType: "select" as const },
-    form: { section: "account" },
+    form: {
+      section: "account",
+      inputType: "select" as const,
+    },
     table: {
       width: "120px",
       align: "center" as const,
@@ -113,7 +160,10 @@ const userMetadata = {
 
   role: {
     input: { inputType: "select" as const },
-    form: { section: "account" },
+    form: {
+      section: "account",
+      inputType: "select" as const,
+    },
     table: {
       width: "100px",
       align: "center" as const,
@@ -184,6 +234,22 @@ const userMetadata = {
     table: { width: "120px", displayType: "date" as const },
     detail: { section: "Timestamps", layout: "half-width" as const },
   },
+
+  departmentId: {
+    input: {
+      placeholder: "Select department...",
+    },
+    form: {
+      section: "additional",
+      inputType: "select" as const,
+      placeholder: "Select department...",
+    },
+    table: { width: "120px" },
+    detail: {
+      section: "Additional Information",
+      layout: "half-width" as const,
+    },
+  },
 };
 
 // Simple validation rules
@@ -231,4 +297,10 @@ registerMetadataForSchemas([userSchema, formSchema], userMetadata, {
 } as any);
 
 // Export everything
-export { userSchema, userMetadata, userValidation, formSchema, userFormSections };
+export {
+  userSchema,
+  userMetadata,
+  userValidation,
+  formSchema,
+  userFormSections,
+};

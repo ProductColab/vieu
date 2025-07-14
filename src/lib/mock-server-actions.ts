@@ -11,6 +11,11 @@ import type {
   BaseEntity,
 } from "./query/types";
 
+interface Department extends BaseEntity {
+  name: string;
+  description?: string;
+}
+
 // Mock user type matching the schema in App.tsx
 interface User extends BaseEntity {
   name: string;
@@ -62,6 +67,23 @@ let mockUsers: User[] = [
     pendingReason: "Waiting for background check completion",
     createdAt: new Date("2023-02-10"),
     updatedAt: new Date("2023-02-10"),
+  },
+];
+
+const mockDepartments: Department[] = [
+  {
+    id: "1",
+    name: "Sales",
+    description: "Department 1 description",
+    createdAt: new Date("2023-01-15"),
+    updatedAt: new Date("2023-01-15"),
+  },
+  {
+    id: "2",
+    name: "Marketing",
+    description: "Department 2 description",
+    createdAt: new Date("2023-01-15"),
+    updatedAt: new Date("2023-01-15"),
   },
 ];
 
@@ -254,4 +276,37 @@ export const userServerActions = {
   create: createUserAction,
   update: updateUserAction,
   delete: deleteUserAction,
+};
+
+export const listDepartmentsAction = async (): Promise<
+  ListResult<Department>
+> => {
+  "use server";
+
+  await delay(200);
+
+  return {
+    data: mockDepartments,
+    meta: {
+      total: mockDepartments.length,
+      page: 1,
+      limit: 10,
+      hasNext: false,
+      hasPrev: false,
+    },
+  };
+};
+
+/**
+ * Server action for getting department options (returns just the array)
+ */
+export const getDepartmentOptionsAction = async (
+  params?: Record<string, unknown>
+): Promise<Department[]> => {
+  "use server";
+
+  await delay(200);
+
+  // Return just the departments array for options
+  return mockDepartments;
 };

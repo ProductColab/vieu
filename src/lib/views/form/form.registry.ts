@@ -75,7 +75,9 @@ export const registerFormSections = (
  * @param schema - The Zod schema
  * @returns Form sections or undefined if not found
  */
-export const getFormSections = (schema: z.ZodType): FormSections | undefined => {
+export const getFormSections = (
+  schema: z.ZodType
+): FormSections | undefined => {
   return schemaSectionsRegistry.get(schema);
 };
 
@@ -161,12 +163,12 @@ export const groupFieldsBySection = (
   sections: FormSections
 ): Record<string, string[]> => {
   const sectionGroups: Record<string, string[]> = {};
-  
+
   // Initialize all defined sections
-  Object.keys(sections).forEach(sectionId => {
+  Object.keys(sections).forEach((sectionId) => {
     sectionGroups[sectionId] = [];
   });
-  
+
   // Group fields by section
   Object.entries(fieldsMetadata).forEach(([fieldName, metadata]) => {
     const sectionId = metadata.form?.section || DEFAULT_SECTION_ID;
@@ -175,14 +177,14 @@ export const groupFieldsBySection = (
     }
     sectionGroups[sectionId].push(fieldName);
   });
-  
+
   // Remove empty sections
-  Object.keys(sectionGroups).forEach(sectionId => {
+  Object.keys(sectionGroups).forEach((sectionId) => {
     if (sectionGroups[sectionId].length === 0) {
       delete sectionGroups[sectionId];
     }
   });
-  
+
   return sectionGroups;
 };
 
@@ -197,8 +199,8 @@ export const getOrderedSections = (
   usedSectionIds: string[]
 ): Array<{ id: string; section: FormSection }> => {
   return usedSectionIds
-    .map(id => ({ id, section: sections[id] }))
-    .filter(item => item.section) // Filter out undefined sections
+    .map((id) => ({ id, section: sections[id] }))
+    .filter((item) => item.section) // Filter out undefined sections
     .sort((a, b) => a.section.order - b.section.order);
 };
 
