@@ -33,29 +33,25 @@ const userFormSections: FormSections = {
   "basic-info": {
     title: "Basic Information",
     description: "Core user details",
-    icon: <User />,
-    order: 1,
+    icon: User,
     collapsible: false,
   },
   "contact": {
     title: "Contact Information",
     description: "How to reach the user",
-    icon: <Mail />,
-    order: 2,
+    icon: Mail,
     collapsible: true,
   },
   "account": {
     title: "Account Details",
     description: "User permissions and status",
-    icon: <Settings />,
-    order: 3,
+    icon: Settings,
     collapsible: true,
   },
   "additional": {
     title: "Additional Information",
     description: "Extra details and notes",
-    icon: <FileText />,
-    order: 4,
+    icon: FileText,
     collapsible: true,
   },
 };

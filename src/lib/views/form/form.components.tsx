@@ -3,209 +3,90 @@ import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { Textarea } from "../../../components/ui/textarea";
-import { Checkbox } from "../../../components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../components/ui/select";
 import {
   Form,
   FormControl,
-  FormField,
+  FormField as BaseFormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "../../../components/ui/form";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import {
-  createSchemaFieldRenderer,
-  safeToJSONSchema,
-  getOptionsFromSchema,
-  type ViewOption,
-} from "../../schema";
 import { shouldShowField } from "../../schema/conditional.utils";
 import {
-  getInputType,
+  getFormInputType,
   type FormComponentProps,
   type FormFieldMetadata,
+  type FormSection,
+  getFormSections,
   getFormComponentType,
   buildFormProps,
-  createViewRegistry,
-  type ComponentMap,
-  getFormSections,
+  formRegistrySystem,
   groupFieldsBySection,
   getOrderedSections,
+  DEFAULT_SECTION_ID,
 } from "./form.registry";
-
+import { SelectField } from "./fields/SelectField";
+import { BooleanField } from "./fields/BooleanField";
+import { NumberField } from "./fields/NumberField";
+import { DateField } from "./fields/DateField";
+import { TextField } from "./fields/TextField";
 /**
- * Input component renderer for text, email, number, etc.
+ * Enhanced form field renderer using the new registry system
  */
-export const renderInputComponent = (props: FormComponentProps) => {
-  const inputType = getInputType(props.schema, props.metadata);
-  const jsonSchema = safeToJSONSchema(props.schema);
-
-  // Convert value based on input type to ensure controlled inputs
-  let displayValue: string | number = "";
-
-  if (props.value != null) {
-    if (inputType === "number") {
-      // For number inputs, keep as number if it's already a number, otherwise convert
-      displayValue =
-        typeof props.value === "number" ? props.value : String(props.value);
-    } else {
-      // For text, email, etc. - always convert to string
-      displayValue = String(props.value);
-    }
-  } else {
-    // For undefined/null values, use empty string
-    displayValue = "";
+export const FormFieldRenderer = ({ 
+  schema, 
+  fieldName, 
+  metadata, 
+  value, 
+  onChange, 
+  error, 
+  className,
+  form,
+  mode = "create"
+}: FormComponentProps) => {
+  const fieldType = getFormInputType(schema, metadata);
+  const props = { schema, fieldName, metadata, value, onChange, error, className, form, mode };
+  
+  switch (fieldType) {
+    case "text":
+    case "email":
+    case "password":
+    case "number":
+      return <NumberField {...props} />;
+    case "url":
+    case "textarea":
+      return <TextField {...props} />;
+    case "select":
+      return <SelectField {...props} />;
+    case "boolean":
+      return <BooleanField {...props} />;
+    case "date":
+      return <DateField {...props} />;
+    default:
+      return <TextField {...props} />;
   }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-
-    // Convert back to appropriate type before calling onChange
-    if (inputType === "number") {
-      // For number inputs, convert to number if valid, otherwise pass the string
-      const numValue = Number(newValue);
-      props.onChange(props.fieldName, isNaN(numValue) ? newValue : numValue);
-    } else {
-      props.onChange(props.fieldName, newValue);
-    }
-  };
-
-  return (
-    <Input
-      type={inputType}
-      value={displayValue}
-      onChange={handleChange}
-      placeholder={props.metadata.placeholder}
-      className={props.className}
-      min={jsonSchema?.minimum}
-      max={jsonSchema?.maximum}
-      minLength={jsonSchema?.minLength}
-      maxLength={jsonSchema?.maxLength}
-    />
-  );
 };
 
 /**
- * Textarea component renderer
+ * Form field using shadcn form components with conditional display
  */
-export const renderTextareaComponent = (props: FormComponentProps) => {
-  const jsonSchema = safeToJSONSchema(props.schema);
-
-  return (
-    <Textarea
-      value={(props.value as string) || ""}
-      onChange={(e) => props.onChange(props.fieldName, e.target.value)}
-      placeholder={props.metadata.placeholder}
-      className={props.className}
-      rows={props.metadata.rows || 4}
-      minLength={jsonSchema?.minLength}
-      maxLength={jsonSchema?.maxLength}
-    />
-  );
-};
-
-/**
- * Select component renderer
- */
-export const renderSelectComponent = (props: FormComponentProps) => {
-  const options = getOptionsFromSchema(props.schema);
-
-  return (
-    <Select
-      value={(props.value as string) || ""}
-      onValueChange={(value) => props.onChange(props.fieldName, value)}
-    >
-      <SelectTrigger className={props.className}>
-        <SelectValue placeholder="Select..." />
-      </SelectTrigger>
-      <SelectContent>
-        {options?.map((opt: ViewOption) => (
-          <SelectItem key={opt.value} value={opt.value}>
-            {opt.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-};
-
-/**
- * Checkbox component renderer
- */
-export const renderCheckboxComponent = (props: FormComponentProps) => {
-  return (
-    <Checkbox
-      checked={props.value === "true" || props.value === true || false}
-      onCheckedChange={(checked) => props.onChange(props.fieldName, checked)}
-      className={props.className}
-    />
-  );
-};
-
-/**
- * Form-specific component map mapping component types to render functions
- */
-const formComponentMap: ComponentMap<FormFieldMetadata, FormComponentProps> = {
-  input: renderInputComponent,
-  textarea: renderTextareaComponent,
-  select: renderSelectComponent,
-  checkbox: renderCheckboxComponent,
-};
-
-/**
- * Complete form registry system created using the base system
- */
-const formRegistrySystem = createViewRegistry(
-  formComponentMap,
-  getFormComponentType,
-  buildFormProps
-);
-
-/**
- * The complete form registry system
- */
-export { formRegistrySystem };
-
-/**
- * The form registry instance for registering form field schemas
- */
-export const formRegistry = formRegistrySystem.registry;
-
-/**
- * Function to get and render a component from a schema
- */
-export const getComponentFromSchema = formRegistrySystem.render;
-
-/**
- * Form-specific field renderer
- */
-export const FormFieldRenderer = createSchemaFieldRenderer(formRegistrySystem);
-
-/**
- * Enhanced form field using shadcn form components with conditional display
- */
-export const EnhancedFormField = ({
+export const FormField = ({
   schema,
   fieldName,
   control,
   watch,
+  form,
 }: {
   schema: z.ZodTypeAny;
   fieldName: string;
   control: any;
   watch: any;
+  form: any;
 }) => {
-  const metadata = formRegistrySystem.get(schema);
+  const parentSchema = form.schema || schema;
+  const metadata = getFieldMetadata(parentSchema, fieldName);
 
   if (!metadata) {
     return (
@@ -231,7 +112,7 @@ export const EnhancedFormField = ({
   }
 
   return (
-    <FormField
+    <BaseFormField
       control={control}
       name={fieldName}
       render={({ field }) => (
@@ -241,8 +122,10 @@ export const EnhancedFormField = ({
             <FormFieldRenderer
               schema={schema}
               fieldName={fieldName}
+              metadata={metadata}
               value={field.value}
               onChange={(_: string, value: unknown) => field.onChange(value)}
+              form={form}
             />
           </FormControl>
           <FormMessage />
@@ -260,7 +143,7 @@ export const FormSectionComponent = ({
   children,
   isFirst = false,
 }: {
-  section: { title: string; description?: string; collapsible?: boolean; icon?: React.ReactElement };
+  section: FormSection;
   children: React.ReactNode;
   isFirst?: boolean;
 }) => {
@@ -358,12 +241,13 @@ export const SchemaForm = ({
         <Form {...form}>
           <form onSubmit={handleSubmit} className="space-y-6">
             {fieldNames.map((fieldName) => (
-              <EnhancedFormField
+              <FormField
                 key={fieldName}
                 schema={schemaShape[fieldName] as z.ZodType}
                 fieldName={fieldName}
                 control={form.control}
                 watch={form.watch}
+                form={form}
               />
             ))}
             <Button type="submit" className="w-full">
@@ -376,15 +260,9 @@ export const SchemaForm = ({
     );
   }
 
-  // Get field metadata for grouping
-  const fieldsMetadata: Record<string, { form?: FormFieldMetadata }> = {};
-  Object.entries(schemaShape).forEach(([fieldName, fieldSchema]) => {
-    const metadata = formRegistrySystem.get(fieldSchema as z.ZodType);
-    if (metadata) {
-      fieldsMetadata[fieldName] = { form: metadata };
-    }
-  });
-
+  // Get field metadata from the new registry system
+  const fieldsMetadata = getFormFields(schema) || {};
+  
   // Group fields by section
   const fieldsBySection = groupFieldsBySection(fieldsMetadata, sections);
   const orderedSections = getOrderedSections(sections, Object.keys(fieldsBySection));
@@ -407,12 +285,13 @@ export const SchemaForm = ({
                 isFirst={index === 0}
               >
                 {sectionFields.map((fieldName) => (
-                  <EnhancedFormField
+                  <FormField
                     key={fieldName}
                     schema={schemaShape[fieldName] as z.ZodType}
                     fieldName={fieldName}
                     control={form.control}
                     watch={form.watch}
+                    form={form}
                   />
                 ))}
               </FormSectionComponent>
