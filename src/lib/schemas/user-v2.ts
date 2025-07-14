@@ -1,6 +1,7 @@
 import * as z from "zod";
 import { registerMetadataForSchemas } from "../schema/register-views";
 import { userServerActions } from "../mock-server-actions";
+import type { FormSections } from "../views/form/form.registry";
 
 // Regular Zod schema - clean and simple
 const userSchema = z.object({
@@ -26,6 +27,30 @@ const formSchema = userSchema.omit({
 
 type UserValues = z.infer<typeof userSchema>;
 
+// Define form sections
+const userFormSections: FormSections = {
+  "basic-info": {
+    title: "Basic Information",
+    description: "Core user details",
+    order: 1,
+  },
+  "contact": {
+    title: "Contact Information",
+    description: "How to reach the user",
+    order: 2,
+  },
+  "account": {
+    title: "Account Details",
+    description: "User permissions and status",
+    order: 3,
+  },
+  "additional": {
+    title: "Additional Information",
+    description: "Extra details and notes",
+    order: 4,
+  },
+};
+
 // Simple metadata object
 const userMetadata = {
   id: {
@@ -35,6 +60,7 @@ const userMetadata = {
 
   name: {
     input: { placeholder: "Enter your full name" },
+    form: { section: "basic-info" },
     table: { width: "200px" },
     card: { position: "header" as const, size: "lg" as const },
     list: { position: "primary" as const },
@@ -43,6 +69,7 @@ const userMetadata = {
 
   email: {
     input: { placeholder: "user@example.com", inputType: "email" as const },
+    form: { section: "contact" },
     table: { width: "250px", displayType: "email" as const },
     card: { position: "body" as const, size: "md" as const },
     list: { position: "secondary" as const },
@@ -51,6 +78,7 @@ const userMetadata = {
 
   age: {
     input: { placeholder: "25", inputType: "number" as const },
+    form: { section: "basic-info" },
     table: { width: "80px", align: "center" as const },
     card: { position: "footer" as const, size: "sm" as const },
     list: { position: "meta" as const },
@@ -59,6 +87,7 @@ const userMetadata = {
 
   status: {
     input: { inputType: "select" as const },
+    form: { section: "account" },
     table: {
       width: "120px",
       align: "center" as const,
@@ -75,6 +104,7 @@ const userMetadata = {
 
   role: {
     input: { inputType: "select" as const },
+    form: { section: "account" },
     table: {
       width: "100px",
       align: "center" as const,
@@ -90,6 +120,7 @@ const userMetadata = {
       placeholder: "Tell us about yourself...",
       inputType: "textarea" as const,
     },
+    form: { section: "additional" },
     table: { width: "300px" },
     card: { position: "body" as const, size: "md" as const },
     list: { position: "secondary" as const, truncate: true },
@@ -98,6 +129,7 @@ const userMetadata = {
 
   adminNotes: {
     input: { placeholder: "Internal notes", inputType: "textarea" as const },
+    form: { section: "additional" },
     table: { width: "200px" },
     showWhen: {
       field: "role",
@@ -112,6 +144,7 @@ const userMetadata = {
       placeholder: "Why is this user pending?",
       inputType: "textarea" as const,
     },
+    form: { section: "additional" },
     table: { width: "180px" },
     showWhen: {
       field: "status",
@@ -123,6 +156,7 @@ const userMetadata = {
 
   phoneNumber: {
     input: { placeholder: "Enter phone number" },
+    form: { section: "contact" },
     table: { width: "140px" },
     showWhen: {
       field: "status",
@@ -171,6 +205,7 @@ registerMetadataForSchemas([userSchema, formSchema], userMetadata, {
   title: "user",
   transport: "server-actions" as const,
   serverActions: userServerActions,
+  formSections: userFormSections,
   cacheConfig: {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -187,4 +222,4 @@ registerMetadataForSchemas([userSchema, formSchema], userMetadata, {
 } as any);
 
 // Export everything
-export { userSchema, userMetadata, userValidation, formSchema };
+export { userSchema, userMetadata, userValidation, formSchema, userFormSections };

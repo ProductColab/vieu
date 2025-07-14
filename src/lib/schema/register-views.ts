@@ -7,7 +7,8 @@ import {
   detailRegistry,
 } from "../views";
 import { queryRegistry } from "../query/query.registry";
-import type { FormFieldMetadata } from "../views/form/form.registry";
+import type { FormFieldMetadata, FormSections } from "../views/form/form.registry";
+import { registerFormSections } from "../views/form/form.registry";
 import type { TableColumnMetadata } from "../views/table/table.registry";
 import type { CardItemMetadata } from "../views/card/card.registry";
 import type { ListItemMetadata } from "../views/list/list.registry";
@@ -16,6 +17,7 @@ import type { QueryMetadata } from "../query/query.registry";
 
 type ViewMetadata = {
   input?: Omit<FormFieldMetadata, "label" | "showWhen">;
+  form?: Omit<FormFieldMetadata, "label" | "showWhen">;
   table?: Omit<TableColumnMetadata, "label" | "showWhen">;
   card?: Omit<CardItemMetadata, "label" | "showWhen">;
   list?: Omit<ListItemMetadata, "label" | "showWhen">;
@@ -25,6 +27,13 @@ type ViewMetadata = {
 };
 
 type SchemaMetadata = Record<string, ViewMetadata>;
+
+/**
+ * Extended query metadata that includes form sections
+ */
+export type ExtendedQueryMetadata = QueryMetadata<any, any> & {
+  formSections?: FormSections;
+};
 
 /**
  * Register view metadata for a regular Zod schema
@@ -49,86 +58,90 @@ export function registerViewMetadata<T extends z.ZodRawShape>(
 
     const label = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
 
-    // Register with form registry
-    if (fieldMetadata.input) {
-      formRegistry.add(fieldSchema, {
-        label,
-        ...fieldMetadata.input,
-        showWhen: fieldMetadata.showWhen,
-      });
+    // Register form metadata
+    if (fieldMetadata.input || fieldMetadata.form) {
+      const formMetadata = fieldMetadata.form || fieldMetadata.input;
+      if (formMetadata) {
+        formRegistry.add(fieldSchema, {
+          ...formMetadata,
+          label,
+          showWhen: fieldMetadata.showWhen,
+        });
+      }
     }
 
-    // Register with table registry
+    // Register table metadata
     if (fieldMetadata.table) {
       tableRegistry.add(fieldSchema, {
-        label,
         ...fieldMetadata.table,
+        label,
         showWhen: fieldMetadata.showWhen,
       });
     }
 
-    // Register with card registry
+    // Register card metadata
     if (fieldMetadata.card) {
       cardRegistry.add(fieldSchema, {
-        label,
         ...fieldMetadata.card,
+        label,
         showWhen: fieldMetadata.showWhen,
       });
     }
 
-    // Register with list registry
+    // Register list metadata
     if (fieldMetadata.list) {
       listRegistry.add(fieldSchema, {
-        label,
         ...fieldMetadata.list,
+        label,
         showWhen: fieldMetadata.showWhen,
       });
     }
 
-    // Register with detail registry
+    // Register detail metadata
     if (fieldMetadata.detail) {
       detailRegistry.add(fieldSchema, {
-        label,
         ...fieldMetadata.detail,
+        label,
         showWhen: fieldMetadata.showWhen,
       });
     }
   });
-
-  return schema;
 }
 
 /**
- * Register view metadata for multiple Zod schemas at once
+ * Register view metadata for multiple schemas
  */
 export function registerViewMetadataForSchemas<T extends z.ZodRawShape>(
   schemas: z.ZodObject<T>[],
   metadata: SchemaMetadata
 ) {
   schemas.forEach((schema) => registerViewMetadata(schema, metadata));
-  return schemas;
 }
 
 /**
- * Register query metadata for multiple schemas at once
+ * Register query metadata for multiple schemas
  */
 export function registerQueryMetadataForSchemas<T extends z.ZodRawShape>(
   schemas: z.ZodObject<T>[],
-  queryMetadata: QueryMetadata<any, any>
+  queryMetadata: ExtendedQueryMetadata
 ) {
   schemas.forEach((schema) => {
     queryRegistry.add(schema, queryMetadata as any);
+    
+    // Register form sections if provided
+    if (queryMetadata.formSections) {
+      registerFormSections(schema, queryMetadata.formSections);
+    }
   });
-  return schemas;
 }
 
 /**
- * Register both view and query metadata for multiple schemas at once
+ * Register both view and query metadata for multiple schemas
  */
 export function registerMetadataForSchemas<T extends z.ZodRawShape>(
   schemas: z.ZodObject<T>[],
   viewMetadata: SchemaMetadata,
-  queryMetadata: QueryMetadata<any, any>
+  queryMetadata: ExtendedQueryMetadata
 ) {
   registerViewMetadataForSchemas(schemas, viewMetadata);
   registerQueryMetadataForSchemas(schemas, queryMetadata);
