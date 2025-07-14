@@ -1,4 +1,4 @@
-# Vieu
+# 🧩 Vieu
 
 **A type-safe schema registry system for React applications**
 
