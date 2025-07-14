@@ -260,7 +260,7 @@ export const FormSectionComponent = ({
   children,
   isFirst = false,
 }: {
-  section: { title: string; description?: string; collapsible?: boolean };
+  section: { title: string; description?: string; collapsible?: boolean; icon?: React.ReactElement };
   children: React.ReactNode;
   isFirst?: boolean;
 }) => {
@@ -274,15 +274,22 @@ export const FormSectionComponent = ({
             <div className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors p-3 -mx-3 rounded-md mb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{section.title}</h3>
+                  <div className="flex items-center gap-3">
+                    {section.icon && (
+                      <div className="text-gray-600 dark:text-gray-400 [&>svg]:h-5 [&>svg]:w-5">
+                        {section.icon}
+                      </div>
+                    )}
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{section.title}</h3>
+                  </div>
                   {section.description && (
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{section.description}</p>
                   )}
                 </div>
                 {isOpen ? (
-                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                  <ChevronDown className="h-5 w-5 text-gray-500 flex-shrink-0" />
                 ) : (
-                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                  <ChevronRight className="h-5 w-5 text-gray-500 flex-shrink-0" />
                 )}
               </div>
             </div>
@@ -300,7 +307,14 @@ export const FormSectionComponent = ({
   return (
     <div className={`${!isFirst ? 'pt-6 border-t border-gray-200' : ''}`}>
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{section.title}</h3>
+        <div className="flex items-center gap-3">
+          {section.icon && (
+            <div className="text-gray-600 dark:text-gray-400 [&>svg]:h-5 [&>svg]:w-5">
+              {section.icon}
+            </div>
+          )}
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{section.title}</h3>
+        </div>
         {section.description && (
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{section.description}</p>
         )}
