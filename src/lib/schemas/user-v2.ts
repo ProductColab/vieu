@@ -1,262 +1,190 @@
 import * as z from "zod";
-import {
-  defineSmartField,
-  semanticFields,
-} from "../schema/field-definition-v2";
-import { createSmartEntity } from "../schema/smart-field-adapter";
+import { registerMetadataForSchemas } from "../schema/register-views";
 import { userServerActions } from "../mock-server-actions";
 
-// Define fields using the new smart field approach
-const userFields = {
-  id: defineSmartField(z.string(), "id")
-    .base({ readonly: true, priority: "low" })
-    .input({ skip: true })
-    .list({ width: "120px" })
-    .detail({
-      section: "Basic Information",
-      layout: "half-width",
-      textSize: "sm",
-    })
-    .build(),
+// Regular Zod schema - clean and simple
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  age: z.number().min(0),
+  status: z.enum(["active", "inactive", "pending"]),
+  role: z.enum(["admin", "user", "guest"]),
+  bio: z.string().optional(),
+  adminNotes: z.string().optional(),
+  pendingReason: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
 
-  name: semanticFields
-    .personName()
-    .input({ placeholder: "Enter your full name" })
-    .table({ width: "200px" })
-    .card({ position: "header", size: "lg", showInPreview: true })
-    .list({ position: "primary" })
-    .detail({
-      section: "Basic Information",
-      presentation: "highlighted",
-      textSize: "2xl",
-    })
-    .build(),
+const formSchema = userSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
-  email: semanticFields
-    .email()
-    .input({ placeholder: "user@example.com" })
-    .table({ width: "250px", displayType: "email" })
-    .card({
-      position: "body",
-      size: "md",
-      style: "secondary",
-      showInPreview: true,
-    })
-    .list({ position: "secondary" })
-    .detail({ section: "Contact Information", textSize: "lg" })
-    .build(),
+type UserValues = z.infer<typeof userSchema>;
 
-  age: semanticFields
-    .age()
-    .input({ placeholder: "25" })
-    .table({ width: "80px", align: "center" })
-    .card({
-      position: "footer",
-      size: "sm",
-      style: "muted",
-      showInPreview: true,
-    })
-    .list({ position: "meta" })
-    .detail({ section: "Basic Information", layout: "half-width" })
-    .build(),
+// Simple metadata object
+const userMetadata = {
+  id: {
+    table: { width: "120px" },
+    detail: { section: "Basic Information", layout: "half-width" as const },
+  },
 
-  status: semanticFields
-    .status(["active", "inactive", "pending"] as const)
-    .table({ width: "120px", align: "center" })
-    .card({
-      position: "header",
-      size: "sm",
-      style: "accent",
-      showInPreview: true,
-    })
-    .list({ position: "secondary", asBadge: true })
-    .detail({
-      section: "Account Details",
-      layout: "third-width",
-      presentation: "bordered",
-    })
-    .build(),
+  name: {
+    input: { placeholder: "Enter your full name" },
+    table: { width: "200px" },
+    card: { position: "header" as const, size: "lg" as const },
+    list: { position: "primary" as const },
+    detail: { section: "Basic Information", textSize: "2xl" as const },
+  },
 
-  role: semanticFields
-    .role(["admin", "user", "guest"] as const)
-    .table({ width: "100px", align: "center" })
-    .card({
-      position: "footer",
-      size: "sm",
-      style: "secondary",
-      showInPreview: true,
-    })
-    .list({ position: "secondary", asBadge: true, badgeVariant: "secondary" })
-    .detail({
-      section: "Account Details",
-      layout: "third-width",
-      presentation: "bordered",
-    })
-    .build(),
+  email: {
+    input: { placeholder: "user@example.com", inputType: "email" as const },
+    table: { width: "250px", displayType: "email" as const },
+    card: { position: "body" as const, size: "md" as const },
+    list: { position: "secondary" as const },
+    detail: { section: "Contact Information", textSize: "lg" as const },
+  },
 
-  bio: semanticFields
-    .bio()
-    .input({ placeholder: "Tell us about yourself..." })
-    .table({ width: "300px" })
-    .card({ position: "body", size: "md", style: "muted", showInPreview: true })
-    .list({ position: "secondary", truncate: true })
-    .detail({
-      section: "Personal Information",
-      layout: "full-width",
-      presentation: "card",
-    })
-    .build(),
+  age: {
+    input: { placeholder: "25", inputType: "number" as const },
+    table: { width: "80px", align: "center" as const },
+    card: { position: "footer" as const, size: "sm" as const },
+    list: { position: "meta" as const },
+    detail: { section: "Basic Information", layout: "half-width" as const },
+  },
 
-  // Conditional fields
-  adminNotes: defineSmartField(z.string().optional(), "adminNotes")
-    .base({
-      label: "Admin Notes",
-      icon: "📝",
-      showWhen: { field: "role", condition: "equals", value: "admin" },
-    })
-    .input({
-      placeholder: "Internal notes for administrators",
-      inputType: "textarea",
-      rows: 3,
-    })
-    .table({ width: "200px" })
-    .card({
-      position: "footer",
-      size: "sm",
-      style: "muted",
-      showInPreview: true,
-    })
-    .list({ position: "meta", truncate: true })
-    .detail({
-      section: "Administrative",
-      layout: "full-width",
-      presentation: "bordered",
-    })
-    .build(),
+  status: {
+    input: { inputType: "select" as const },
+    table: {
+      width: "120px",
+      align: "center" as const,
+      displayType: "badge" as const,
+    },
+    card: {
+      position: "header" as const,
+      size: "sm" as const,
+      style: "accent" as const,
+    },
+    list: { position: "secondary" as const, asBadge: true },
+    detail: { section: "Account Details", layout: "third-width" as const },
+  },
 
-  pendingReason: defineSmartField(z.string().optional(), "pendingReason")
-    .base({
-      label: "Pending Reason",
-      icon: "⏳",
-      showWhen: { field: "status", condition: "equals", value: "pending" },
-    })
-    .input({
+  role: {
+    input: { inputType: "select" as const },
+    table: {
+      width: "100px",
+      align: "center" as const,
+      displayType: "badge" as const,
+    },
+    card: { position: "footer" as const, size: "sm" as const },
+    list: { position: "secondary" as const, asBadge: true },
+    detail: { section: "Account Details", layout: "third-width" as const },
+  },
+
+  bio: {
+    input: {
+      placeholder: "Tell us about yourself...",
+      inputType: "textarea" as const,
+    },
+    table: { width: "300px" },
+    card: { position: "body" as const, size: "md" as const },
+    list: { position: "secondary" as const, truncate: true },
+    detail: { section: "Personal Information", layout: "full-width" as const },
+  },
+
+  adminNotes: {
+    input: { placeholder: "Internal notes", inputType: "textarea" as const },
+    table: { width: "200px" },
+    showWhen: {
+      field: "role",
+      condition: "custom" as const,
+      predicate: (_: any, allValues: Record<string, any>) =>
+        allValues.role === "admin",
+    },
+  },
+
+  pendingReason: {
+    input: {
       placeholder: "Why is this user pending?",
-      inputType: "textarea",
-      rows: 2,
-    })
-    .table({ width: "180px" })
-    .card({
-      position: "footer",
-      size: "sm",
-      style: "muted",
-      showInPreview: true,
-    })
-    .list({ position: "meta", truncate: true })
-    .detail({
-      section: "Account Details",
-      layout: "full-width",
-      presentation: "bordered",
-    })
-    .build(),
+      inputType: "textarea" as const,
+    },
+    table: { width: "180px" },
+    showWhen: {
+      field: "status",
+      condition: "custom" as const,
+      predicate: (_: any, allValues: Record<string, any>) =>
+        allValues.status === "pending",
+    },
+  },
 
-  phoneNumber: defineSmartField(z.string().optional(), "phoneNumber")
-    .base({
-      label: "Phone Number",
-      icon: "📞",
-      clickable: true,
-      showWhen: {
-        field: "status",
-        condition: "custom",
-        predicate: (statusValue, allValues) => {
-          return (
-            statusValue === "active" &&
-            allValues.age &&
-            Number(allValues.age) >= 21
-          );
-        },
-      },
-    })
-    .input({ placeholder: "Enter phone number" })
-    .table({ width: "140px" })
-    .card({
-      position: "body",
-      size: "sm",
-      style: "secondary",
-      showInPreview: true,
-    })
-    .list({ position: "secondary" })
-    .detail({
-      section: "Contact Information",
-      layout: "half-width",
-      textSize: "lg",
-    })
-    .build(),
+  phoneNumber: {
+    input: { placeholder: "Enter phone number" },
+    table: { width: "140px" },
+    showWhen: {
+      field: "status",
+      condition: "custom" as const,
+      predicate: (_: any, allValues: Record<string, any>) =>
+        allValues.status === "active" && allValues.age >= 21,
+    },
+  },
 
-  createdAt: semanticFields
-    .createdAt()
-    .table({ width: "120px", displayType: "date" })
-    .list({ position: "meta" })
-    .detail({ section: "Timestamps", layout: "half-width", textSize: "sm" })
-    .build(),
+  createdAt: {
+    table: { width: "120px", displayType: "date" as const },
+    detail: { section: "Timestamps", layout: "half-width" as const },
+  },
 
-  updatedAt: semanticFields
-    .updatedAt()
-    .table({ width: "120px", displayType: "date" })
-    .list({ position: "meta" })
-    .detail({ section: "Timestamps", layout: "half-width", textSize: "sm" })
-    .build(),
+  updatedAt: {
+    table: { width: "120px", displayType: "date" as const },
+    detail: { section: "Timestamps", layout: "half-width" as const },
+  },
 };
 
-// Create the entity using the smart field adapter
-export const userSchemasV2 = createSmartEntity({
-  name: "User",
-  fields: userFields,
-  transport: "server-actions",
+// Simple validation rules
+const userValidation = [
+  {
+    message: "Admin users must be at least 25 years old",
+    path: ["age"] as const,
+    validate: (values: UserValues) =>
+      values.role === "admin" ? values.age >= 25 : true,
+  },
+  {
+    message: "Pending accounts must have a reason provided",
+    path: ["pendingReason"] as const,
+    validate: (values: UserValues) =>
+      values.status === "pending" ? !!values.pendingReason : true,
+  },
+  {
+    message: "Admin email must be from company domain",
+    path: ["email"] as const,
+    validate: (values: UserValues) =>
+      values.role === "admin" ? values.email.endsWith("@company.com") : true,
+  },
+];
+
+// Register the metadata with both schemas at once
+registerMetadataForSchemas([userSchema, formSchema], userMetadata, {
+  label: "user",
+  title: "user",
+  transport: "server-actions" as const,
   serverActions: userServerActions,
   cacheConfig: {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
   },
-  // Cross-field validation rules
-  validation: [
-    {
-      message: "Admin users must be at least 25 years old",
-      path: ["age"],
-      validate: (values) => {
-        if (values.role === "admin") {
-          return values.age >= 25;
-        }
-        return true;
-      },
-    },
-    {
-      message: "Pending accounts must have a reason provided",
-      path: ["pendingReason"],
-      validate: (values) => {
-        if (values.status === "pending") {
-          return values.pendingReason && values.pendingReason.length > 0;
-        }
-        return true;
-      },
-    },
-    {
-      message: "Admin email must be from company domain",
-      path: ["email"],
-      validate: (values) => {
-        if (values.role === "admin") {
-          return values.email && values.email.endsWith("@company.com");
-        }
-        return true;
-      },
-    },
-  ],
-});
+  operations: {
+    list: true,
+    get: true,
+    search: true,
+    create: true,
+    update: true,
+    delete: true,
+  },
+} as any);
 
-// Export the schemas for use in components
-export const userSchemaV2 = userSchemasV2.schema;
-export const userFormSchemaV2 = userSchemasV2.formSchema;
-export const userUpdateSchemaV2 = userSchemasV2.updateSchema;
-export const userCardSchemaV2 = userSchemasV2.cardSchema;
-export const userListSchemaV2 = userSchemasV2.listSchema;
-export const userDetailSchemaV2 = userSchemasV2.detailSchema;
+// Export everything
+export { userSchema, userMetadata, userValidation, formSchema };

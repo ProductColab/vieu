@@ -12,10 +12,8 @@ import {
   useTableSort,
 } from "./lib/views";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { userSchemaV2, userFormSchemaV2 } from "./lib/schemas/user-v2";
 import { useEntity } from "./lib/query";
-import { SchemaBuilderProvider } from "./lib/schema-builder/schema-builder.provider";
-import { SchemaBuilderLayout } from "./lib/schema-builder/components";
+import { formSchema } from "./lib/schemas/user-v2";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,7 +35,7 @@ const AppContent = () => {
   > | null>(null);
   const { sortField, sortDirection, handleSort, sortData } = useTableSort();
 
-  const { useList, useCreate } = useEntity(userSchemaV2 as any);
+  const { useList, useCreate } = useEntity(formSchema as any);
 
   const { data: serverUsers, isLoading, error } = useList();
   const createUser = useCreate();
@@ -55,7 +53,7 @@ const AppContent = () => {
 
   const generateJsonSchema = () => {
     try {
-      const jsonSchema = z.toJSONSchema(userFormSchemaV2, {
+      const jsonSchema = z.toJSONSchema(formSchema, {
         metadata: z.globalRegistry,
         unrepresentable: "any",
       });
@@ -199,7 +197,7 @@ const AppContent = () => {
                       as form inputs with validation.
                     </p>
                     <SchemaForm
-                      schema={userFormSchemaV2}
+                      schema={formSchema}
                       onSubmit={handleFormSubmit}
                     />
                   </>
@@ -287,7 +285,7 @@ const AppContent = () => {
                 {viewMode === "table" ? (
                   <div className="overflow-x-auto">
                     <SchemaTable
-                      schema={userSchemaV2}
+                      schema={formSchema}
                       data={sortedData}
                       sortField={sortField}
                       sortDirection={sortDirection}
@@ -297,7 +295,7 @@ const AppContent = () => {
                   </div>
                 ) : viewMode === "cards" ? (
                   <SchemaCardGrid
-                    schema={userSchemaV2}
+                    schema={formSchema}
                     data={sortedData}
                     onItemClick={(item) => {
                       setSelectedItem(item);
@@ -307,7 +305,7 @@ const AppContent = () => {
                   />
                 ) : viewMode === "list" ? (
                   <SchemaList
-                    schema={userSchemaV2}
+                    schema={formSchema}
                     data={sortedData}
                     onItemClick={(item) => {
                       setSelectedItem(item);
@@ -331,7 +329,7 @@ const AppContent = () => {
                       </Button>
                     </div>
                     <SchemaDetail
-                      schema={userSchemaV2}
+                      schema={formSchema}
                       data={selectedItem}
                       onClick={(fieldName, value) =>
                         console.log("Detail field clicked:", fieldName, value)
@@ -418,14 +416,6 @@ const AppContent = () => {
                 </div>
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="builder">
-            <SchemaBuilderProvider>
-              <div className="h-[80vh]">
-                <SchemaBuilderLayout />
-              </div>
-            </SchemaBuilderProvider>
           </TabsContent>
         </Tabs>
       </div>
