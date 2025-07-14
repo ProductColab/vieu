@@ -51,6 +51,19 @@ export const userSchemas = defineEntity({
         width: "120px",
         sortable: true,
       })
+      .list({
+        label: "ID",
+        position: "meta",
+        truncate: true,
+      })
+      .detail({
+        label: "ID",
+        section: "Basic Information",
+        priority: "low",
+        layout: "half-width",
+        textSize: "sm",
+        showInDetail: true,
+      })
       .build(),
 
     name: defineField(z.string().min(2))
@@ -72,6 +85,22 @@ export const userSchemas = defineEntity({
         style: "primary",
         showInPreview: true,
         icon: "👤",
+      })
+      .list({
+        label: "Full Name",
+        position: "primary",
+        icon: "👤",
+        clickable: true,
+      })
+      .detail({
+        label: "Full Name",
+        section: "Basic Information",
+        priority: "high",
+        layout: "full-width",
+        presentation: "highlighted",
+        textSize: "2xl",
+        icon: "👤",
+        showInDetail: true,
       })
       .meta({
         title: "Full Name",
@@ -101,6 +130,22 @@ export const userSchemas = defineEntity({
         showInPreview: true,
         icon: "✉️",
       })
+      .list({
+        label: "Email",
+        position: "secondary",
+        icon: "✉️",
+        clickable: true,
+      })
+      .detail({
+        label: "Email Address",
+        section: "Contact Information",
+        priority: "high",
+        layout: "half-width",
+        textSize: "lg",
+        icon: "✉️",
+        clickable: true,
+        showInDetail: true,
+      })
       .meta({
         title: "Email Address",
         description: "Your email address",
@@ -129,6 +174,20 @@ export const userSchemas = defineEntity({
         showInPreview: true,
         icon: "🎂",
       })
+      .list({
+        label: "Age",
+        position: "meta",
+        icon: "🎂",
+      })
+      .detail({
+        label: "Age",
+        section: "Basic Information",
+        priority: "medium",
+        layout: "half-width",
+        textSize: "base",
+        icon: "🎂",
+        showInDetail: true,
+      })
       .meta({
         title: "Age",
         description: "Your age in years",
@@ -155,6 +214,24 @@ export const userSchemas = defineEntity({
         style: "accent",
         showInPreview: true,
         icon: "🟢",
+      })
+      .list({
+        label: "Status",
+        position: "secondary",
+        asBadge: true,
+        badgeVariant: "default",
+        icon: "🟢",
+      })
+      .detail({
+        label: "Account Status",
+        section: "Account Details",
+        priority: "high",
+        layout: "third-width",
+        presentation: "bordered",
+        asBadge: true,
+        badgeVariant: "default",
+        icon: "🟢",
+        showInDetail: true,
       })
       .meta({
         title: "Status",
@@ -185,6 +262,24 @@ export const userSchemas = defineEntity({
         showInPreview: true,
         icon: "🔑",
       })
+      .list({
+        label: "Role",
+        position: "secondary",
+        asBadge: true,
+        badgeVariant: "secondary",
+        icon: "🔑",
+      })
+      .detail({
+        label: "User Role",
+        section: "Account Details",
+        priority: "high",
+        layout: "third-width",
+        presentation: "bordered",
+        asBadge: true,
+        badgeVariant: "secondary",
+        icon: "🔑",
+        showInDetail: true,
+      })
       .meta({
         title: "Role",
         description: "User role",
@@ -212,6 +307,22 @@ export const userSchemas = defineEntity({
         style: "muted",
         showInPreview: true,
         icon: "📝",
+      })
+      .list({
+        label: "Bio",
+        position: "secondary",
+        icon: "📝",
+        truncate: true,
+      })
+      .detail({
+        label: "Biography",
+        section: "Personal Information",
+        priority: "medium",
+        layout: "full-width",
+        presentation: "card",
+        textSize: "base",
+        icon: "📝",
+        showInDetail: true,
       })
       .meta({
         title: "Biography",
@@ -257,6 +368,32 @@ export const userSchemas = defineEntity({
           value: "admin",
         },
       })
+      .list({
+        label: "Admin Notes",
+        position: "meta",
+        icon: "📝",
+        truncate: true,
+        showWhen: {
+          field: "role",
+          condition: "equals",
+          value: "admin",
+        },
+      })
+      .detail({
+        label: "Admin Notes",
+        section: "Administrative",
+        priority: "medium",
+        layout: "full-width",
+        presentation: "bordered",
+        textSize: "sm",
+        icon: "📝",
+        showInDetail: true,
+        showWhen: {
+          field: "role",
+          condition: "equals",
+          value: "admin",
+        },
+      })
       .build(),
 
     // Conditional field - only show when status is pending
@@ -290,6 +427,32 @@ export const userSchemas = defineEntity({
         style: "muted",
         showInPreview: true,
         icon: "⏳",
+        showWhen: {
+          field: "status",
+          condition: "equals",
+          value: "pending",
+        },
+      })
+      .list({
+        label: "Pending Reason",
+        position: "meta",
+        icon: "⏳",
+        truncate: true,
+        showWhen: {
+          field: "status",
+          condition: "equals",
+          value: "pending",
+        },
+      })
+      .detail({
+        label: "Pending Reason",
+        section: "Account Details",
+        priority: "high",
+        layout: "full-width",
+        presentation: "bordered",
+        textSize: "base",
+        icon: "⏳",
+        showInDetail: true,
         showWhen: {
           field: "status",
           condition: "equals",
@@ -352,6 +515,44 @@ export const userSchemas = defineEntity({
           },
         },
       })
+      .list({
+        label: "Phone",
+        position: "secondary",
+        icon: "📞",
+        clickable: true,
+        showWhen: {
+          field: "status",
+          condition: "custom",
+          predicate: (statusValue, allValues) => {
+            return (
+              statusValue === "active" &&
+              allValues.age &&
+              Number(allValues.age) >= 21
+            );
+          },
+        },
+      })
+      .detail({
+        label: "Phone Number",
+        section: "Contact Information",
+        priority: "high",
+        layout: "half-width",
+        textSize: "lg",
+        icon: "📞",
+        clickable: true,
+        showInDetail: true,
+        showWhen: {
+          field: "status",
+          condition: "custom",
+          predicate: (statusValue, allValues) => {
+            return (
+              statusValue === "active" &&
+              allValues.age &&
+              Number(allValues.age) >= 21
+            );
+          },
+        },
+      })
       .build(),
 
     createdAt: defineField(z.date())
@@ -362,6 +563,18 @@ export const userSchemas = defineEntity({
         width: "120px",
         sortable: true,
         displayType: "date",
+      })
+      .list({
+        label: "Created",
+        position: "meta",
+      })
+      .detail({
+        label: "Created",
+        section: "Timestamps",
+        priority: "low",
+        layout: "half-width",
+        textSize: "sm",
+        showInDetail: true,
       })
       .build(),
 
@@ -374,6 +587,18 @@ export const userSchemas = defineEntity({
         sortable: true,
         displayType: "date",
       })
+      .list({
+        label: "Updated",
+        position: "meta",
+      })
+      .detail({
+        label: "Updated",
+        section: "Timestamps",
+        priority: "low",
+        layout: "half-width",
+        textSize: "sm",
+        showInDetail: true,
+      })
       .build(),
   },
 });
@@ -382,3 +607,5 @@ export const userSchema = userSchemas.schema;
 export const userFormSchema = userSchemas.formSchema;
 export const userUpdateSchema = userSchemas.updateSchema;
 export const userCardSchema = userSchemas.cardSchema;
+export const userListSchema = userSchemas.listSchema;
+export const userDetailSchema = userSchemas.detailSchema;
